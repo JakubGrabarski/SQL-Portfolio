@@ -1,0 +1,154 @@
+--  We have these tables in the database:
+--  Customers: Customers details
+--  Employees: Employee information
+--  Offices: Sales office locations
+--  Orders: Customer order information
+--  OrderDetails: Items in customer orders
+--  Payments: Customer payment records
+--  Products: Details about products
+--  ProductLines: Categories of products
+
+-- Question 1: Obtaining basic information about tables
+
+SELECT 'Customers' AS table_name,
+       13 AS number_of_attribute,
+	   COUNT(*) AS number_of_rows
+  FROM customers 
+  
+  UNION ALL
+
+SELECT 'Employees' AS table_name,
+       8 AS number_of_attribute,
+	   COUNT(*) AS number_of_rows
+  FROM employees 
+  
+  UNION ALL
+ 
+SELECT 'Offices' AS table_name,
+       9 AS number_of_attribute,
+	   COUNT(*) AS number_of_rows
+  FROM offices 
+  
+ UNION ALL
+  
+SELECT 'Orders' AS table_name,
+       7 AS number_of_attribute,
+	   COUNT(*) AS number_of_rows
+  FROM orders 
+  
+ UNION ALL 
+ 
+SELECT 'OrderDetails' AS table_name,
+       5 AS number_of_attribute,
+	   COUNT(*) AS number_of_rows
+  FROM orderdetails 
+  
+ UNION ALL 
+ 
+SELECT 'Payments' AS table_name,
+       4 AS number_of_attribute,
+	   COUNT(*) AS number_of_rows
+  FROM payments
+  
+ UNION ALL 
+ 
+SELECT 'Products' AS table_name,
+       9 AS number_of_attribute,
+	   COUNT(*) AS number_of_rows
+  FROM products
+  
+ UNION ALL 
+  
+SELECT 'ProductLines' AS table_name,
+       4 AS number_of_attribute,
+	   COUNT(*) AS number_of_rows
+  FROM productlines;
+  
+-- Question 2: Which Products Should We Order More of or Less of?
+
+  WITH 
+low_stock_table AS (
+    SELECT 
+        productCode, 
+        ROUND(SUM(quantityOrdered) * 1.0 / 
+              (SELECT quantityInStock 
+               FROM products AS p 
+               WHERE p.productCode = o.productCode), 2) AS low_stock
+    FROM orderdetails AS o
+    GROUP BY productCode
+    ORDER BY low_stock DESC
+    LIMIT 10
+),
+
+product_to_restock AS (
+    SELECT 
+        productCode, 
+        SUM(quantityOrdered * priceEach) AS product_performance
+    FROM orderdetails
+    WHERE productCode IN (SELECT productCode FROM low_stock_table)
+    GROUP BY productCode
+    ORDER BY product_performance DESC
+    LIMIT 10
+)
+
+SELECT 
+    p.productCode, 
+    p.productName, 
+    p.productLine, 
+    ls.low_stock,   -- Wskaźnik niskiego stanu magazynowego
+    pr.product_performance  -- Wydajność produktu
+FROM products AS p
+JOIN low_stock_table AS ls ON p.productCode = ls.productCode
+JOIN product_to_restock AS pr ON p.productCode = pr.productCode
+ORDER BY ls.low_stock ASC;
+
+-- Question 3: Finding Top 10 Vip Customers
+
+WITH profit_per_customer_table AS (
+SELECT customerNumber, SUM(quantityOrdered * (priceEach - buyPrice)) AS profit
+  FROM orders AS o
+  JOIN orderdetails AS od
+    ON od.orderNumber = o.orderNumber
+  JOIN products AS p
+    ON p.productCode = od.productCode
+ GROUP BY o.customerNumber)
+ 
+ SELECT c.contactLastName, c.contactFirstName, c.city,
+        c.country, ppct.profit
+   FROM customers AS c
+   JOIN profit_per_customer_table AS ppct
+     ON c.customerNumber = ppct.customerNumber
+  ORDER BY ppct.profit DESC
+  LIMIT 5;
+
+-- Question 4: Finding  The Less Engaged  Customers -Top 10
+
+ WITH profit_per_customer_table AS (
+SELECT customerNumber, SUM(quantityOrdered * (priceEach - buyPrice)) AS profit
+  FROM orders AS o
+  JOIN orderdetails AS od
+    ON od.orderNumber = o.orderNumber
+  JOIN products AS p
+    ON p.productCode = od.productCode
+ GROUP BY o.customerNumber)
+ 
+ SELECT c.contactLastName, c.contactFirstName, c.city,
+        c.country, ppct.profit
+   FROM customers AS c
+   JOIN profit_per_customer_table AS ppct
+     ON c.customerNumber = ppct.customerNumber
+  ORDER BY ppct.profit 
+  LIMIT 5;
+
+-- Question 5: Customer Lifetime Value (LTV) Average
+WITH profit_per_customer_table AS (
+SELECT customerNumber, SUM(quantityOrdered * (priceEach - buyPrice)) AS profit
+  FROM orders AS o
+  JOIN orderdetails AS od
+    ON od.orderNumber = o.orderNumber
+  JOIN products AS p
+    ON p.productCode = od.productCode
+ GROUP BY o.customerNumber)
+ 
+ SELECT AVG(ppct.profit) AS "The Average of Customer Lifetime Value (LTV)"
+   FROM profit_per_customer_table AS ppct;
