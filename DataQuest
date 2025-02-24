@@ -1,14 +1,20 @@
---  We have these tables in the database:
---  Customers: Customers details
---  Employees: Employee information
---  Offices: Sales office locations
---  Orders: Customer order information
---  OrderDetails: Items in customer orders
---  Payments: Customer payment records
---  Products: Details about products
---  ProductLines: Categories of products
+-- ============================================
+-- STRUCTURE OF THE DATABASE
+-- ============================================
 
--- Question 1: Obtaining basic information about tables
+--  We have these tables in the database:
+-- Customers 		: Customer details 
+-- Employees 		: Employee information 
+-- Offices 			: Sales office locations 
+-- Orders 			: Customer order information 
+-- OrderDetails 		: Items in customer orders 
+-- Payments 			: Customer payment records 
+-- Products			 : Details about products 
+-- ProductLines 		: Categories of products
+
+-- ============================================
+-- QUESTION 1: OBTAINING BASIC INFORMATION ABOUT TABLES
+-- ============================================
 
 SELECT 'Customers' AS table_name,
        13 AS number_of_attribute,
@@ -64,7 +70,9 @@ SELECT 'ProductLines' AS table_name,
 	   COUNT(*) AS number_of_rows
   FROM productlines;
   
--- Question 2: Which Products Should We Order More of or Less of?
+-- ============================================
+-- QUESTION 2: WHICH PRODUCTS SHOULD BE ORDERED MORE OR LESS?
+-- ============================================
 
   WITH 
 low_stock_table AS (
@@ -102,7 +110,9 @@ JOIN low_stock_table AS ls ON p.productCode = ls.productCode
 JOIN product_to_restock AS pr ON p.productCode = pr.productCode
 ORDER BY ls.low_stock ASC;
 
--- Question 3: Finding Top 10 Vip Customers
+-- ============================================
+-- QUESTION 3: FINDING TOP 10 VIP CUSTOMERS
+-- ============================================
 
 WITH profit_per_customer_table AS (
 SELECT customerNumber, SUM(quantityOrdered * (priceEach - buyPrice)) AS profit
@@ -121,7 +131,9 @@ SELECT customerNumber, SUM(quantityOrdered * (priceEach - buyPrice)) AS profit
   ORDER BY ppct.profit DESC
   LIMIT 5;
 
--- Question 4: Finding  The Less Engaged  Customers -Top 10
+-- ============================================
+-- QUESTION 4: FINDING THE 10 LEAST ENGAGED CUSTOMERS
+-- ============================================
 
  WITH profit_per_customer_table AS (
 SELECT customerNumber, SUM(quantityOrdered * (priceEach - buyPrice)) AS profit
@@ -140,7 +152,10 @@ SELECT customerNumber, SUM(quantityOrdered * (priceEach - buyPrice)) AS profit
   ORDER BY ppct.profit 
   LIMIT 5;
 
--- Question 5: Customer Lifetime Value (LTV) Average
+-- ============================================
+-- QUESTION 5: CUSTOMER LIFETIME VALUE (LTV) AVERAGE
+-- ============================================
+
 WITH profit_per_customer_table AS (
 SELECT customerNumber, SUM(quantityOrdered * (priceEach - buyPrice)) AS profit
   FROM orders AS o
